@@ -102,6 +102,27 @@ export default function App() {
 
   const total = cart.reduce((acc, item) => acc + item.price, 0);
 
+  const handleCheckout = async () => {
+    try {
+      const response = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cart }),
+      });
+
+      const data = await response.json();
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert("Erreur Stripe");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Erreur lors du paiement");
+    }
+  };
+
   // --- FONCTIONS GEMINI ---
 
   const callGeminiAPI = async (prompt, systemPrompt) => {
@@ -482,10 +503,11 @@ export default function App() {
                 </p>
                 <button
                   className="w-full flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-blue-700"
-                  onClick={() => alert("Ceci est une démo. Intégrez Stripe ou Shopify pour le paiement !")}
+                  onClick={handleCheckout}
                 >
                   Procéder au paiement
                 </button>
+
                 <div className="mt-6 flex justify-center text-center text-sm text-gray-500">
                   <p>
                     ou <button type="button" className="font-medium text-blue-600 hover:text-blue-500" onClick={() => setIsCartOpen(false)}>
