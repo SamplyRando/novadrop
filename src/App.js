@@ -112,16 +112,20 @@ export default function App() {
 
       const data = await response.json();
 
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert("Erreur Stripe");
+      if (!response.ok) {
+        console.error("Stripe API error:", data);
+        alert(data?.error || "Erreur lors du paiement");
+        return;
       }
-    } catch (error) {
-      console.error(error);
-      alert("Erreur lors du paiement");
+
+      if (data.url) window.location.href = data.url;
+      else alert("Erreur Stripe: pas d'URL");
+    } catch (e) {
+      console.error(e);
+      alert("Erreur réseau / serveur");
     }
   };
+
 
   // --- FONCTIONS GEMINI ---
 
