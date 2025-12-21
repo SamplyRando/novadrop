@@ -81,12 +81,23 @@ export default function App() {
   const [pitchLoading, setPitchLoading] = useState(null); // ID du produit en cours de pitch
   const chatEndRef = useRef(null);
   
+  // Ajout pour gestion des pages de paiement
+  const [page, setPage] = useState("home");
+  
   const apiKey = ""; // Gemini API Key injected by environment
 
   // Auto-scroll chat
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, chatOpen]);
+
+  // Gestion de la page selon l'URL (success/cancel)
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path === "/success") setPage("success");
+    else if (path === "/cancel") setPage("cancel");
+    else setPage("home");
+  }, []);
 
   // Fonction pour ajouter au panier
   const addToCart = (product) => {
@@ -195,6 +206,35 @@ export default function App() {
     }
     setPitchLoading(null);
   };
+
+  // Ajout du rendu conditionnel pour les pages de paiement
+  if (page === "success") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="bg-white p-8 rounded-2xl shadow max-w-md w-full text-center">
+          <h1 className="text-2xl font-extrabold mb-2">✅ Paiement confirmé</h1>
+          <p className="text-gray-600 mb-6">Merci ! Nous préparons votre commande.</p>
+          <a href="/" className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg">
+            Retour à la boutique
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  if (page === "cancel") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="bg-white p-8 rounded-2xl shadow max-w-md w-full text-center">
+          <h1 className="text-2xl font-extrabold mb-2">❌ Paiement annulé</h1>
+          <p className="text-gray-600 mb-6">Aucun paiement n’a été effectué.</p>
+          <a href="/" className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg">
+            Retour à la boutique
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
