@@ -1,5 +1,4 @@
 const Stripe = require("stripe");
-
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 module.exports = async (req, res) => {
@@ -13,7 +12,8 @@ module.exports = async (req, res) => {
       res.status(400).json({ error: "Panier vide" });
       return;
     }
-    const origin = req.headers.origin || `https://${req.headers.host}`;
+    const origin =
+      req.headers.origin || process.env.SITE_URL || `https://${req.headers.host}`;
     const line_items = cart.map((item) => ({
       price_data: {
         currency: "eur",

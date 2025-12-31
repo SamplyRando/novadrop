@@ -20,10 +20,8 @@ module.exports = async (req, res) => {
   }
   try {
     const session = await stripe.checkout.sessions.retrieve(session_id);
-    if (session.payment_status !== 'paid') {
-      res.status(200).json({ paid: false });
-      return;
-    }
+    const paid = session.payment_status === 'paid';
+
     // Optionnel: sauvegarde Supabase (idempotent)
     let order_id = null;
     if (supabase) {
@@ -61,10 +59,10 @@ module.exports = async (req, res) => {
       console.log('Supabase not configured');
     }
     res.status(200).json({
-      paid: true,
+      paid,
       amount_total: session.amount_total,
       customer_email: session.customer_details?.email || session.customer_email,
-      order_id,
+      order_id: session.payment_intent || session.id,
     });
   } catch (err) {
     console.error('Stripe confirm error:', err);

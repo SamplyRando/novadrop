@@ -76,48 +76,8 @@ function AppHome({
   pitchLoading, setPitchLoading, chatEndRef,
   handleCheckout, PRODUCTS, addToCart, removeFromCart, total, generatePitch, callGeminiAPI, apiKey
 }) {
-  // // Fonction pour ajouter au panier
-  // const addToCart = (product) => {
-  //   setCart([...cart, product]);
-  //   setNotification(`${product.name} ajouté au panier !`);
-  //   setIsCartOpen(true);
-  //   setTimeout(() => setNotification(null), 3000);
-  // };
-
-  // const removeFromCart = (indexToRemove) => {
-  //   setCart(cart.filter((_, index) => index !== indexToRemove));
-  // };
-
-  // const total = cart.reduce((acc, item) => acc + item.price, 0);
-
-  const callGeminiAPI = async (prompt, systemPrompt) => {
-    if (!apiKey) {
-      alert("Clé API manquante. L'IA ne peut pas répondre.");
-      return null;
-    }
-
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            systemInstruction: { parts: [{ text: systemPrompt }] }
-          }),
-        }
-      );
-
-      if (!response.ok) throw new Error("Erreur API");
-      const data = await response.json();
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || "Désolé, je n'ai pas compris.";
-    } catch (error) {
-      console.error("Gemini Error:", error);
-      return "Une erreur est survenue avec l'IA.";
-    }
-  };
-
+  // Utilise uniquement les props reçues, ne redéclare PAS addToCart, removeFromCart, total, callGeminiAPI, generatePitch ici !
+  // handleChatSubmit doit utiliser callGeminiAPI (props)
   const handleChatSubmit = async (e) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
