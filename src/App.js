@@ -74,7 +74,7 @@ function AppHome({
   chatOpen, setChatOpen, chatMessages, setChatMessages,
   chatInput, setChatInput, isChatLoading, setIsChatLoading,
   pitchLoading, setPitchLoading, chatEndRef,
-  handleCheckout
+  handleCheckout, PRODUCTS, addToCart, removeFromCart, total, generatePitch, callGeminiAPI, apiKey
 }) {
   // Fonction pour ajouter au panier
   const addToCart = (product) => {
