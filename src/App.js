@@ -646,7 +646,6 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [notification, setNotification] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   // --- STATE IA ---
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([
@@ -656,30 +655,106 @@ export default function App() {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [pitchLoading, setPitchLoading] = useState(null); // ID du produit en cours de pitch
   const chatEndRef = useRef(null);
-  
-  // Ajout pour gestion des pages de paiement
-  const [page, setPage] = useState("home");
-  
-  const apiKey = ""; // Gemini API Key injected by environment
+
+  // Panier persistant (localStorage)
+  useEffect(() => {
+    const storedCart = localStorage.getItem("cart");
+    if (storedCart) {
+      try {
+        setCart(JSON.parse(storedCart));
+      } catch (e) {
+        localStorage.removeItem("cart");
+      }
+    }
+  }, []);
+  useEffect(() => {
+    localStorage.setItem("cart", JSON.stringify(cart));
+  }, [cart]);
+
+  // Clé Gemini depuis env CRA
+  const apiKey = process.env.REACT_APP_GEMINI_API_KEY || "";
+
+  // Fonctions panier
+  const addToCart = (product) => {
+    setCart([...cart, product]);
+    setNotification(`${product.name} ajouté au panier !`);
+    setIsCartOpen(true);
+    setTimeout(() => setNotification(null), 3000);
+  };
+  const removeFromCart = (indexToRemove) => {
+    setCart(cart.filter((_, index) => index !== indexToRemove));
+  };
+  const total = cart.reduce((acc, item) => acc + item.price, 0);
+
+  // Paiement Stripe
+  const handleCheckout = async () => {
+    try {
+      const response = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cart }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        console.error("Stripe API error:", data);
+        alert(data?.error || "Erreur lors du paiement");
+        return;
+      }
+      if (data.url) window.location.href = data.url;
+      else alert("Erreur Stripe: pas d'URL");
+    } catch (e) {
+      console.error(e);
+      alert("Erreur réseau / serveur");
+    }
+  };
+
+  // --- FONCTIONS GEMINI ---
+  const callGeminiAPI = async (prompt, systemPrompt) => {
+    if (!apiKey) {
+      alert("Clé API manquante. L'IA ne peut pas répondre.");
+      return null;
+    }
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            systemInstruction: { parts: [{ text: systemPrompt }] }
+          }),
+        }
+      );
+      if (!response.ok) throw new Error("Erreur API");
+      const data = await response.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || "Désolé, je n'ai pas compris.";
+    } catch (error) {
+      console.error("Gemini Error:", error);
+      return "Une erreur est survenue avec l'IA.";
+    }
+  };
+  const generatePitch = async (product) => {
+    setPitchLoading(product.id);
+    const systemPrompt = "Tu es un expert en copywriting e-commerce. Tu dois créer une phrase d'accroche (punchline) irrésistible.";
+    const prompt = `Génère une phrase d'accroche courte (max 20 mots) très persuasive pour vendre ce produit : ${product.name} à ${product.price}€. Utilise un ton urgent et exclusif. Ajoute un emoji.`;
+    const pitch = await callGeminiAPI(prompt, systemPrompt);
+    if (pitch) {
+      alert(`📢 L'avis de Nova :\n\n${pitch}`);
+    }
+    setPitchLoading(null);
+  };
 
   // Auto-scroll chat
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, chatOpen]);
 
-  // Gestion de la page selon l'URL (success/cancel)
-  useEffect(() => {
-    const path = window.location.pathname;
-    if (path === "/success") setPage("success");
-    else if (path === "/cancel") setPage("cancel");
-    else setPage("home");
-  }, []);
-
   return (
     <Router>
       <Routes>
         <Route path="/" element={
-          <AppHome 
+          <AppHome
             cart={cart} setCart={setCart} isCartOpen={isCartOpen} setIsCartOpen={setIsCartOpen}
             notification={notification} setNotification={setNotification}
             mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen}
@@ -693,6 +768,7 @@ export default function App() {
             total={total}
             generatePitch={generatePitch}
             callGeminiAPI={callGeminiAPI}
+            apiKey={apiKey}
           />
         } />
         <Route path="/success" element={<SuccessPage setCart={setCart} />} />
