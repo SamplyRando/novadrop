@@ -1,19 +1,19 @@
-import Stripe from "stripe";
+const Stripe = require("stripe");
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+    res.status(405).json({ error: "Méthode non autorisée" });
+    return;
   }
-
   try {
     const { cart } = req.body;
-
-    if (!cart || !Array.isArray(cart) || cart.length === 0) {
-      return res.status(400).json({ error: "Cart is empty" });
+    if (!Array.isArray(cart) || cart.length === 0) {
+      res.status(400).json({ error: "Panier vide" });
+      return;
     }
-
+    const origin = req.headers.origin || `https://${req.headers.host}`;
     const line_items = cart.map((item) => ({
       price_data: {
         currency: "eur",
@@ -22,18 +22,16 @@ export default async function handler(req, res) {
       },
       quantity: 1,
     }));
-
     const session = await stripe.checkout.sessions.create({
-      mode: "payment",
       payment_method_types: ["card"],
+      mode: "payment",
       line_items,
-      success_url: `${req.headers.origin}/success`,
-      cancel_url: `${req.headers.origin}/cancel`,
+      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/cancel`,
     });
-
-    return res.status(200).json({ url: session.url });
+    res.status(200).json({ url: session.url });
   } catch (err) {
     console.error("Stripe error:", err);
-    return res.status(500).json({ error: err.message || "Stripe error" });
+    res.status(500).json({ error: "Erreur Stripe" });
   }
-}
+};

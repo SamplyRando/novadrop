@@ -68,3 +68,67 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+# NovaDrop – Déploiement production-ready
+
+## Test Stripe en local
+
+- Utilise les cartes de test Stripe pour simuler des paiements :
+  - Carte Visa : `4242 4242 4242 4242` (date future, CVC aléatoire)
+  - Plus de cartes : https://stripe.com/docs/testing
+- Lance le front (`npm start`) et le backend (Vercel dev ou déploiement).
+- Ajoute un produit au panier, procède au paiement, vérifie la redirection `/success`.
+- La page de succès vérifie le paiement côté serveur (anti-fake success).
+
+## Variables d’environnement à définir
+
+### Stripe (obligatoire, côté serveur uniquement)
+- `STRIPE_SECRET_KEY` : Clé secrète Stripe (jamais côté client)
+
+### Supabase (optionnel, pour sauvegarde commandes)
+- `SUPABASE_URL` : URL de ton projet Supabase
+- `SUPABASE_SERVICE_ROLE_KEY` : Clé service role (jamais côté client)
+
+### Exemple (Vercel dashboard ou .env.local)
+```
+STRIPE_SECRET_KEY=sk_live_xxx
+SUPABASE_URL=https://xxxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6...
+```
+
+## Création de la table commandes (Supabase)
+
+Dans le SQL Editor de Supabase, exécute :
+
+```sql
+create table if not exists orders (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamp with time zone default now(),
+  session_id text unique not null,
+  email text,
+  amount_total integer,
+  currency text,
+  items jsonb,
+  status text
+);
+create index if not exists idx_orders_session_id on orders(session_id);
+```
+
+## Déploiement
+- Push sur GitHub, connecte à Vercel, configure les variables d’environnement.
+- `npm run build` doit fonctionner sans erreur.
+
+## Sécurité
+- Ne JAMAIS exposer la clé Stripe secrète ou la clé Supabase service role côté client.
+- Les routes `/api/create-checkout-session` et `/api/confirm-payment` sont serverless (côté serveur uniquement).
+
+## Flux de vente
+- Panier persistant (localStorage)
+- Paiement Stripe Checkout sécurisé
+- Vérification du paiement côté serveur
+- Sauvegarde de la commande (si Supabase configuré)
+- Pages `/success` et `/cancel` fiables
+
+---
+
+Pour toute question, ouvre une issue sur le repo !

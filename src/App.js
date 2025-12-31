@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ShoppingCart, Star, X, Truck, ShieldCheck, Zap, Menu, Instagram, Facebook, Twitter, Trash2, ArrowRight, MessageSquare, Send, Sparkles, Loader2, Bot } from 'lucide-react';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 
 // Données fictives des produits (Niche Tech/Lifestyle)
 const PRODUCTS = [
@@ -65,40 +66,16 @@ const PRODUCTS = [
   }
 ];
 
-export default function App() {
-  const [cart, setCart] = useState([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [notification, setNotification] = useState(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  // --- STATE IA ---
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState([
-    { role: 'model', text: "Salut ! Je suis Nova ✨. Je peux vous aider à trouver le cadeau parfait ou répondre à vos questions sur la livraison." }
-  ]);
-  const [chatInput, setChatInput] = useState("");
-  const [isChatLoading, setIsChatLoading] = useState(false);
-  const [pitchLoading, setPitchLoading] = useState(null); // ID du produit en cours de pitch
-  const chatEndRef = useRef(null);
-  
-  // Ajout pour gestion des pages de paiement
-  const [page, setPage] = useState("home");
-  
-  const apiKey = ""; // Gemini API Key injected by environment
-
-  // Auto-scroll chat
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages, chatOpen]);
-
-  // Gestion de la page selon l'URL (success/cancel)
-  useEffect(() => {
-    const path = window.location.pathname;
-    if (path === "/success") setPage("success");
-    else if (path === "/cancel") setPage("cancel");
-    else setPage("home");
-  }, []);
-
+// Composant principal de la boutique (page d'accueil)
+function AppHome({
+  cart, setCart, isCartOpen, setIsCartOpen,
+  notification, setNotification,
+  mobileMenuOpen, setMobileMenuOpen,
+  chatOpen, setChatOpen, chatMessages, setChatMessages,
+  chatInput, setChatInput, isChatLoading, setIsChatLoading,
+  pitchLoading, setPitchLoading, chatEndRef,
+  handleCheckout
+}) {
   // Fonction pour ajouter au panier
   const addToCart = (product) => {
     setCart([...cart, product]);
@@ -112,33 +89,6 @@ export default function App() {
   };
 
   const total = cart.reduce((acc, item) => acc + item.price, 0);
-
-  const handleCheckout = async () => {
-    try {
-      const response = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cart }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error("Stripe API error:", data);
-        alert(data?.error || "Erreur lors du paiement");
-        return;
-      }
-
-      if (data.url) window.location.href = data.url;
-      else alert("Erreur Stripe: pas d'URL");
-    } catch (e) {
-      console.error(e);
-      alert("Erreur réseau / serveur");
-    }
-  };
-
-
-  // --- FONCTIONS GEMINI ---
 
   const callGeminiAPI = async (prompt, systemPrompt) => {
     if (!apiKey) {
@@ -206,35 +156,6 @@ export default function App() {
     }
     setPitchLoading(null);
   };
-
-  // Ajout du rendu conditionnel pour les pages de paiement
-  if (page === "success") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white p-8 rounded-2xl shadow max-w-md w-full text-center">
-          <h1 className="text-2xl font-extrabold mb-2">✅ Paiement confirmé</h1>
-          <p className="text-gray-600 mb-6">Merci ! Nous préparons votre commande.</p>
-          <a href="/" className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg">
-            Retour à la boutique
-          </a>
-        </div>
-      </div>
-    );
-  }
-
-  if (page === "cancel") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white p-8 rounded-2xl shadow max-w-md w-full text-center">
-          <h1 className="text-2xl font-extrabold mb-2">❌ Paiement annulé</h1>
-          <p className="text-gray-600 mb-6">Aucun paiement n’a été effectué.</p>
-          <a href="/" className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg">
-            Retour à la boutique
-          </a>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
@@ -638,5 +559,145 @@ export default function App() {
         </div>
       )}
     </div>
+  );
+}
+
+// Page de succès de paiement
+function SuccessPage({ setCart }) {
+  const location = useLocation();
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
+  const [order, setOrder] = React.useState(null);
+  const navigate = useNavigate();
+
+  // Récupérer le session_id depuis l'URL
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const session_id = params.get('session_id');
+    if (!session_id) {
+      setError("Session de paiement introuvable.");
+      setLoading(false);
+      return;
+    }
+    // Vérifier le paiement côté serveur
+    fetch(`/api/confirm-payment?session_id=${session_id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.paid) {
+          setOrder(data);
+          setCart([]);
+          localStorage.removeItem("cart");
+        } else {
+          setError("Paiement non confirmé.");
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        setError("Erreur lors de la confirmation du paiement.");
+        setLoading(false);
+      });
+  }, [location, setCart]);
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
+  if (error) return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="bg-white p-8 rounded-2xl shadow max-w-md w-full text-center">
+        <h1 className="text-2xl font-extrabold mb-2 text-red-600">❌ Erreur</h1>
+        <p className="text-gray-600 mb-6">{error}</p>
+        <button onClick={() => navigate("/")} className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg">Retour à la boutique</button>
+      </div>
+    </div>
+  );
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="bg-white p-8 rounded-2xl shadow max-w-md w-full text-center">
+        <h1 className="text-2xl font-extrabold mb-2">✅ Paiement confirmé</h1>
+        <p className="text-gray-600 mb-2">Merci ! Nous préparons votre commande.</p>
+        {order && (
+          <div className="mb-4 text-sm text-gray-700">
+            <div>Montant : <b>{(order.amount_total / 100).toFixed(2)} €</b></div>
+            <div>Email : <b>{order.customer_email}</b></div>
+            <div>Commande : <b>{order.order_id}</b></div>
+          </div>
+        )}
+        <button onClick={() => navigate("/")} className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg">Retour à la boutique</button>
+      </div>
+    </div>
+  );
+}
+
+// Page d'annulation de paiement
+function CancelPage() {
+  const navigate = useNavigate();
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="bg-white p-8 rounded-2xl shadow max-w-md w-full text-center">
+        <h1 className="text-2xl font-extrabold mb-2">❌ Paiement annulé</h1>
+        <p className="text-gray-600 mb-6">Aucun paiement n’a été effectué.</p>
+        <button onClick={() => navigate("/")} className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg">Retour à la boutique</button>
+      </div>
+    </div>
+  );
+}
+
+// Nouveau composant App qui gère le routing
+export default function App() {
+  const [cart, setCart] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [notification, setNotification] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // --- STATE IA ---
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([
+    { role: 'model', text: "Salut ! Je suis Nova ✨. Je peux vous aider à trouver le cadeau parfait ou répondre à vos questions sur la livraison." }
+  ]);
+  const [chatInput, setChatInput] = useState("");
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [pitchLoading, setPitchLoading] = useState(null); // ID du produit en cours de pitch
+  const chatEndRef = useRef(null);
+  
+  // Ajout pour gestion des pages de paiement
+  const [page, setPage] = useState("home");
+  
+  const apiKey = ""; // Gemini API Key injected by environment
+
+  // Auto-scroll chat
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages, chatOpen]);
+
+  // Gestion de la page selon l'URL (success/cancel)
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path === "/success") setPage("success");
+    else if (path === "/cancel") setPage("cancel");
+    else setPage("home");
+  }, []);
+
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={
+          <AppHome 
+            cart={cart} setCart={setCart} isCartOpen={isCartOpen} setIsCartOpen={setIsCartOpen}
+            notification={notification} setNotification={setNotification}
+            mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen}
+            chatOpen={chatOpen} setChatOpen={setChatOpen} chatMessages={chatMessages} setChatMessages={setChatMessages}
+            chatInput={chatInput} setChatInput={setChatInput} isChatLoading={isChatLoading} setIsChatLoading={setIsChatLoading}
+            pitchLoading={pitchLoading} setPitchLoading={setPitchLoading} chatEndRef={chatEndRef}
+            handleCheckout={handleCheckout}
+            PRODUCTS={PRODUCTS}
+            addToCart={addToCart}
+            removeFromCart={removeFromCart}
+            total={total}
+            generatePitch={generatePitch}
+            callGeminiAPI={callGeminiAPI}
+          />
+        } />
+        <Route path="/success" element={<SuccessPage setCart={setCart} />} />
+        <Route path="/cancel" element={<CancelPage />} />
+      </Routes>
+    </Router>
   );
 }
