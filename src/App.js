@@ -738,7 +738,8 @@ export default function App() {
   }, [cart]);
 
   // Clé Gemini depuis env CRA
-  const apiKey = process.env.geminiKey || "";
+  const apiKey = process.env.REACT_APP_GEMINI_API_KEY || "";
+
 
   // Fonctions panier
   const addToCart = (product) => {
