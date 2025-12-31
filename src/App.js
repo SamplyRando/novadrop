@@ -1,6 +1,31 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ShoppingCart, Star, X, Truck, ShieldCheck, Zap, Menu, Instagram, Facebook, Twitter, Trash2, ArrowRight, MessageSquare, Send, Sparkles, Loader2, Bot } from 'lucide-react';
-import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from "react-router-dom";
+// src/App.js
+import React, { useState, useEffect, useRef } from "react";
+import {
+  ShoppingCart,
+  Star,
+  X,
+  Truck,
+  ShieldCheck,
+  Zap,
+  Menu,
+  Instagram,
+  Facebook,
+  Twitter,
+  Trash2,
+  ArrowRight,
+  MessageSquare,
+  Send,
+  Sparkles,
+  Loader2,
+  Bot,
+} from "lucide-react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 
 // Données fictives des produits (Niche Tech/Lifestyle)
 const PRODUCTS = [
@@ -11,8 +36,9 @@ const PRODUCTS = [
     oldPrice: 129.99,
     rating: 4.8,
     reviews: 124,
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800",
-    tag: "Best Seller"
+    image:
+      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800",
+    tag: "Best Seller",
   },
   {
     id: 2,
@@ -21,8 +47,9 @@ const PRODUCTS = [
     oldPrice: 89.99,
     rating: 4.9,
     reviews: 89,
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=800",
-    tag: "-50%"
+    image:
+      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=800",
+    tag: "-50%",
   },
   {
     id: 3,
@@ -31,8 +58,9 @@ const PRODUCTS = [
     oldPrice: 199.99,
     rating: 4.7,
     reviews: 210,
-    image: "https://images.unsplash.com/photo-1517260739337-6799d2eb9ce0?auto=format&fit=crop&q=80&w=800",
-    tag: "Viral"
+    image:
+      "https://images.unsplash.com/photo-1517260739337-6799d2eb9ce0?auto=format&fit=crop&q=80&w=800",
+    tag: "Viral",
   },
   {
     id: 4,
@@ -41,8 +69,9 @@ const PRODUCTS = [
     oldPrice: 49.99,
     rating: 4.6,
     reviews: 56,
-    image: "https://images.unsplash.com/photo-1602143407151-0111419500be?auto=format&fit=crop&q=80&w=800",
-    tag: "Nouveau"
+    image:
+      "https://images.unsplash.com/photo-1602143407151-0111419500be?auto=format&fit=crop&q=80&w=800",
+    tag: "Nouveau",
   },
   {
     id: 5,
@@ -51,8 +80,9 @@ const PRODUCTS = [
     oldPrice: 69.99,
     rating: 4.9,
     reviews: 145,
-    image: "https://images.unsplash.com/photo-1616353071855-2c045c4458ae?auto=format&fit=crop&q=80&w=800",
-    tag: null
+    image:
+      "https://images.unsplash.com/photo-1616353071855-2c045c4458ae?auto=format&fit=crop&q=80&w=800",
+    tag: null,
   },
   {
     id: 6,
@@ -61,65 +91,75 @@ const PRODUCTS = [
     oldPrice: 59.99,
     rating: 4.5,
     reviews: 78,
-    image: "https://images.unsplash.com/photo-1534073828943-f801091a7d58?auto=format&fit=crop&q=80&w=800",
-    tag: "Promo"
-  }
+    image:
+      "https://images.unsplash.com/photo-1534073828943-f801091a7d58?auto=format&fit=crop&q=80&w=800",
+    tag: "Promo",
+  },
 ];
 
-// Composant principal de la boutique (page d'accueil)
+// =========================
+// Home / Shop Page
+// =========================
 function AppHome({
-  cart, setCart, isCartOpen, setIsCartOpen,
-  notification, setNotification,
-  mobileMenuOpen, setMobileMenuOpen,
-  chatOpen, setChatOpen, chatMessages, setChatMessages,
-  chatInput, setChatInput, isChatLoading, setIsChatLoading,
-  pitchLoading, setPitchLoading, chatEndRef,
-  handleCheckout, PRODUCTS, addToCart, removeFromCart, total, generatePitch, callGeminiAPI, apiKey
+  cart,
+  isCartOpen,
+  setIsCartOpen,
+  notification,
+  mobileMenuOpen,
+  setMobileMenuOpen,
+
+  chatOpen,
+  setChatOpen,
+  chatMessages,
+  setChatMessages,
+  chatInput,
+  setChatInput,
+  isChatLoading,
+  setIsChatLoading,
+  chatEndRef,
+
+  handleCheckout,
+  addToCart,
+  removeFromCart,
+  total,
+
+  // IMPORTANT: on les reçoit en props (ne PAS redéclarer)
+  generatePitch,
+  callGeminiAPI,
 }) {
-  // Utilise uniquement les props reçues, ne redéclare PAS addToCart, removeFromCart, total, callGeminiAPI, generatePitch ici !
-  // handleChatSubmit doit utiliser callGeminiAPI (props)
   const handleChatSubmit = async (e) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
 
     const userMsg = chatInput;
-    setChatMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+    setChatMessages((prev) => [...prev, { role: "user", text: userMsg }]);
     setChatInput("");
     setIsChatLoading(true);
 
     const systemPrompt = `
-      Tu es Nova, l'assistant IA commercial de NovaDrop.
-      Ton ton : Enthousiaste, serviable, un peu "marketing" mais honnête. Emoji friendly ✨.
-      Tes connaissances :
-      - Livraison gratuite > 50€. Expédition 24h. Retours 30 jours.
-      - Produits : ${JSON.stringify(PRODUCTS.map(p => ({name: p.name, price: p.price, tag: p.tag})))}.
-      Ta mission : Aider le client à choisir un produit selon ses besoins (cadeau, sport, tech...), ou répondre aux questions logistiques.
-      Sois concis (max 3 phrases).
-    `;
+Tu es Nova, l'assistant IA commercial de NovaDrop.
+Ton ton : Enthousiaste, serviable, un peu "marketing" mais honnête. Emoji friendly ✨.
+Tes connaissances :
+- Livraison gratuite > 50€. Expédition 24h. Retours 30 jours.
+- Produits : ${JSON.stringify(
+      PRODUCTS.map((p) => ({ name: p.name, price: p.price, tag: p.tag }))
+    )}.
+Ta mission : Aider le client à choisir un produit selon ses besoins (cadeau, sport, tech...), ou répondre aux questions logistiques.
+Sois concis (max 3 phrases).
+    `.trim();
 
-    // Contexte de conversation simple (juste le dernier message pour cette démo légère)
     const prompt = `L'utilisateur dit : "${userMsg}". Réponds en tant que Nova.`;
-
     const reply = await callGeminiAPI(prompt, systemPrompt);
-    setChatMessages(prev => [...prev, { role: 'model', text: reply }]);
-    setIsChatLoading(false);
-  };
 
-  const generatePitch = async (product) => {
-    setPitchLoading(product.id);
-    const systemPrompt = "Tu es un expert en copywriting e-commerce. Tu dois créer une phrase d'accroche (punchline) irrésistible.";
-    const prompt = `Génère une phrase d'accroche courte (max 20 mots) très persuasive pour vendre ce produit : ${product.name} à ${product.price}€. Utilise un ton urgent et exclusif. Ajoute un emoji.`;
-    
-    const pitch = await callGeminiAPI(prompt, systemPrompt);
-    if (pitch) {
-      alert(`📢 L'avis de Nova :\n\n${pitch}`);
-    }
-    setPitchLoading(null);
+    setChatMessages((prev) => [
+      ...prev,
+      { role: "model", text: reply || "Désolé, je n'ai pas compris." },
+    ]);
+    setIsChatLoading(false);
   };
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
-      
       {/* --- BANDEAU PROMO --- */}
       <div className="bg-black text-white text-xs font-bold py-2 text-center tracking-widest uppercase">
         Livraison gratuite dès 50€ d'achat • Expédition en 24h
@@ -130,23 +170,34 @@ function AppHome({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 -ml-2 mr-2 md:hidden">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 -ml-2 mr-2 md:hidden"
+              >
                 <Menu size={24} />
               </button>
               <span className="text-2xl font-extrabold tracking-tighter italic">
                 NOVA<span className="text-blue-600">DROP</span>
               </span>
             </div>
-            
+
             <div className="hidden md:flex space-x-8 font-medium text-sm">
-              <a href="#" className="hover:text-blue-600 transition">Nouveautés</a>
-              <a href="#" className="hover:text-blue-600 transition">Best Sellers</a>
-              <a href="#" className="hover:text-blue-600 transition">High-Tech</a>
-              <a href="#" className="hover:text-blue-600 transition">Maison</a>
+              <a href="#products" className="hover:text-blue-600 transition">
+                Nouveautés
+              </a>
+              <a href="#products" className="hover:text-blue-600 transition">
+                Best Sellers
+              </a>
+              <a href="#products" className="hover:text-blue-600 transition">
+                High-Tech
+              </a>
+              <a href="#products" className="hover:text-blue-600 transition">
+                Maison
+              </a>
             </div>
 
             <div className="flex items-center space-x-4">
-              <button 
+              <button
                 className="relative p-2 hover:bg-gray-100 rounded-full transition"
                 onClick={() => setIsCartOpen(true)}
               >
@@ -165,30 +216,34 @@ function AppHome({
       {/* --- HERO SECTION --- */}
       <div className="relative bg-gray-900 text-white overflow-hidden">
         <div className="absolute inset-0">
-          <img 
-            src="https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&q=80&w=2000" 
-            alt="Hero Background" 
+          <img
+            src="https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&q=80&w=2000"
+            alt="Hero Background"
             className="w-full h-full object-cover opacity-40"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent"></div>
         </div>
+
         <div className="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8 text-center sm:text-left">
           <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl mb-6">
             Le Futur est <br className="hidden sm:block" />
             <span className="text-blue-500">Déjà Ici.</span>
           </h1>
           <p className="mt-6 text-xl text-gray-300 max-w-2xl">
-            Découvrez notre sélection exclusive d'objets connectés et d'accessoires lifestyle. 
+            Découvrez notre sélection exclusive d'objets connectés et d'accessoires lifestyle.
             Des prix imbattables, une qualité premium.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center sm:justify-start">
-            <button 
-                onClick={() => setChatOpen(true)}
-                className="px-8 py-4 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:text-lg transition shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2"
+            <button
+              onClick={() => setChatOpen(true)}
+              className="px-8 py-4 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:text-lg transition shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2"
             >
               <Sparkles size={20} /> Trouver un cadeau (IA)
             </button>
-            <a href="#products" className="px-8 py-4 border border-gray-500 text-base font-medium rounded-md text-white hover:bg-white/10 md:text-lg transition">
+            <a
+              href="#products"
+              className="px-8 py-4 border border-gray-500 text-base font-medium rounded-md text-white hover:bg-white/10 md:text-lg transition"
+            >
               Voir le catalogue
             </a>
           </div>
@@ -228,15 +283,17 @@ function AppHome({
       <div id="products" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="flex items-center justify-between mb-10">
           <h2 className="text-3xl font-extrabold text-gray-900">Tendances du moment 🔥</h2>
-          <a href="#" className="text-blue-600 hover:text-blue-700 font-medium flex items-center">
-            Tout voir <ArrowRight size={16} className="ml-1"/>
+          <a href="#products" className="text-blue-600 hover:text-blue-700 font-medium flex items-center">
+            Tout voir <ArrowRight size={16} className="ml-1" />
           </a>
         </div>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-10 gap-x-6 lg:gap-x-8">
           {PRODUCTS.map((product) => (
-            <div key={product.id} className="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col">
-              
+            <div
+              key={product.id}
+              className="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col"
+            >
               {/* Image Container */}
               <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-t-2xl bg-gray-200 relative h-64">
                 <img
@@ -249,18 +306,17 @@ function AppHome({
                     {product.tag}
                   </span>
                 )}
-                
+
                 {/* Bouton IA "Convaincs-moi" */}
                 <button
-                    onClick={(e) => {
-                        e.preventDefault();
-                        generatePitch(product);
-                    }}
-                    disabled={pitchLoading === product.id}
-                    className="absolute bottom-4 right-4 bg-white/90 backdrop-blur text-purple-700 text-xs font-bold px-3 py-2 rounded-lg shadow-lg hover:bg-purple-600 hover:text-white transition flex items-center gap-1"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    generatePitch(product);
+                  }}
+                  className="absolute bottom-4 right-4 bg-white/90 backdrop-blur text-purple-700 text-xs font-bold px-3 py-2 rounded-lg shadow-lg hover:bg-purple-600 hover:text-white transition flex items-center gap-1"
                 >
-                    {pitchLoading === product.id ? <Loader2 size={12} className="animate-spin"/> : <Sparkles size={12} />}
-                    Convaincs-moi !
+                  <Sparkles size={12} />
+                  Convaincs-moi !
                 </button>
               </div>
 
@@ -269,7 +325,7 @@ function AppHome({
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="text-lg font-bold text-gray-900 line-clamp-1">
-                      <a href="#">
+                      <a href="#products">
                         <span aria-hidden="true" className="absolute inset-0" />
                         {product.name}
                       </a>
@@ -277,23 +333,29 @@ function AppHome({
                     <div className="flex items-center mt-1">
                       <div className="flex text-yellow-400">
                         {[...Array(5)].map((_, i) => (
-                          <Star key={i} size={14} fill={i < Math.floor(product.rating) ? "currentColor" : "none"} />
+                          <Star
+                            key={i}
+                            size={14}
+                            fill={i < Math.floor(product.rating) ? "currentColor" : "none"}
+                          />
                         ))}
                       </div>
                       <span className="text-xs text-gray-400 ml-2">({product.reviews} avis)</span>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="mt-4 flex items-end justify-between">
                   <div>
-                    <p className="text-sm text-gray-400 line-through decoration-red-500">{product.oldPrice}€</p>
+                    <p className="text-sm text-gray-400 line-through decoration-red-500">
+                      {product.oldPrice}€
+                    </p>
                     <p className="text-2xl font-extrabold text-gray-900">{product.price}€</p>
                   </div>
-                  <button 
+                  <button
                     onClick={(e) => {
-                        e.preventDefault();
-                        addToCart(product);
+                      e.preventDefault();
+                      addToCart(product);
                     }}
                     className="z-10 bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-600/20 active:scale-95 flex items-center justify-center"
                   >
@@ -338,13 +400,26 @@ function AppHome({
       <footer className="bg-white border-t border-gray-200">
         <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 md:flex md:items-center md:justify-between lg:px-8">
           <div className="flex justify-center space-x-6 md:order-2">
-            <a href="#" className="text-gray-400 hover:text-gray-500"><Instagram size={24}/></a>
-            <a href="#" className="text-gray-400 hover:text-gray-500"><Facebook size={24}/></a>
-            <a href="#" className="text-gray-400 hover:text-gray-500"><Twitter size={24}/></a>
+            <a href="#products" className="text-gray-400 hover:text-gray-500">
+              <Instagram size={24} />
+            </a>
+            <a href="#products" className="text-gray-400 hover:text-gray-500">
+              <Facebook size={24} />
+            </a>
+            <a href="#products" className="text-gray-400 hover:text-gray-500">
+              <Twitter size={24} />
+            </a>
           </div>
           <div className="mt-8 md:mt-0 md:order-1">
             <p className="text-center text-base text-gray-400">
-              &copy; 2024 NovaDrop Inc. Tous droits réservés. <a href="#" className="underline">CGV</a> • <a href="#" className="underline">Mentions Légales</a>
+              &copy; 2024 NovaDrop Inc. Tous droits réservés.{" "}
+              <a href="#products" className="underline">
+                CGV
+              </a>{" "}
+              •{" "}
+              <a href="#products" className="underline">
+                Mentions Légales
+              </a>
             </p>
           </div>
         </div>
@@ -354,11 +429,11 @@ function AppHome({
       {isCartOpen && (
         <div className="relative z-50">
           {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" 
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
             onClick={() => setIsCartOpen(false)}
           />
-          
+
           {/* Panel */}
           <div className="fixed inset-y-0 right-0 max-w-md w-full bg-white shadow-2xl flex flex-col transform transition-transform">
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
@@ -375,10 +450,7 @@ function AppHome({
                     <ShoppingCart size={48} />
                   </div>
                   <p className="text-gray-500">Votre panier est vide.</p>
-                  <button 
-                    onClick={() => setIsCartOpen(false)}
-                    className="text-blue-600 font-medium hover:underline"
-                  >
+                  <button onClick={() => setIsCartOpen(false)} className="text-blue-600 font-medium hover:underline">
                     Continuer mes achats
                   </button>
                 </div>
@@ -394,11 +466,9 @@ function AppHome({
                         />
                       </div>
                       <div className="ml-4 flex flex-1 flex-col">
-                        <div>
-                          <div className="flex justify-between text-base font-medium text-gray-900">
-                            <h3 className="line-clamp-2 pr-4">{item.name}</h3>
-                            <p className="ml-4">{item.price}€</p>
-                          </div>
+                        <div className="flex justify-between text-base font-medium text-gray-900">
+                          <h3 className="line-clamp-2 pr-4">{item.name}</h3>
+                          <p className="ml-4">{item.price}€</p>
                         </div>
                         <div className="flex flex-1 items-end justify-between text-sm">
                           <p className="text-gray-500">Qté 1</p>
@@ -407,7 +477,7 @@ function AppHome({
                             onClick={() => removeFromCart(index)}
                             className="font-medium text-red-500 hover:text-red-700 flex items-center"
                           >
-                            <Trash2 size={16} className="mr-1"/> Supprimer
+                            <Trash2 size={16} className="mr-1" /> Supprimer
                           </button>
                         </div>
                       </div>
@@ -435,7 +505,12 @@ function AppHome({
 
                 <div className="mt-6 flex justify-center text-center text-sm text-gray-500">
                   <p>
-                    ou <button type="button" className="font-medium text-blue-600 hover:text-blue-500" onClick={() => setIsCartOpen(false)}>
+                    ou{" "}
+                    <button
+                      type="button"
+                      className="font-medium text-blue-600 hover:text-blue-500"
+                      onClick={() => setIsCartOpen(false)}
+                    >
                       Continuer vos achats <span aria-hidden="true"> &rarr;</span>
                     </button>
                   </p>
@@ -456,30 +531,36 @@ function AppHome({
                 <Bot size={20} />
                 <span className="font-bold">Assistant Nova ✨</span>
               </div>
-              <button onClick={() => setChatOpen(false)} className="hover:bg-white/20 rounded p-1"><X size={16}/></button>
+              <button onClick={() => setChatOpen(false)} className="hover:bg-white/20 rounded p-1">
+                <X size={16} />
+              </button>
             </div>
-            
+
             {/* Messages */}
             <div className="h-80 overflow-y-auto p-4 bg-gray-50 space-y-4">
               {chatMessages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${
-                    msg.role === 'user' 
-                      ? 'bg-blue-600 text-white rounded-br-none' 
-                      : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm'
-                  }`}>
+                <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={`max-w-[85%] p-3 rounded-2xl text-sm ${
+                      msg.role === "user"
+                        ? "bg-blue-600 text-white rounded-br-none"
+                        : "bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm"
+                    }`}
+                  >
                     {msg.text}
                   </div>
                 </div>
               ))}
+
               {isChatLoading && (
                 <div className="flex justify-start">
-                    <div className="bg-white border border-gray-200 p-3 rounded-2xl rounded-bl-none shadow-sm flex items-center gap-2">
-                        <Loader2 size={16} className="animate-spin text-blue-600"/>
-                        <span className="text-xs text-gray-400">Nova réfléchit...</span>
-                    </div>
+                  <div className="bg-white border border-gray-200 p-3 rounded-2xl rounded-bl-none shadow-sm flex items-center gap-2">
+                    <Loader2 size={16} className="animate-spin text-blue-600" />
+                    <span className="text-xs text-gray-400">Nova réfléchit...</span>
+                  </div>
                 </div>
               )}
+
               <div ref={chatEndRef} />
             </div>
 
@@ -492,8 +573,8 @@ function AppHome({
                 placeholder="Chercher un cadeau, une question..."
                 className="flex-1 bg-gray-100 border-0 rounded-full px-4 text-sm focus:ring-2 focus:ring-blue-500"
               />
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={isChatLoading || !chatInput.trim()}
                 className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
@@ -502,7 +583,7 @@ function AppHome({
             </form>
           </div>
         )}
-        
+
         {/* Toggle Button */}
         <button
           onClick={() => setChatOpen(!chatOpen)}
@@ -522,7 +603,9 @@ function AppHome({
   );
 }
 
-// Page de succès de paiement
+// =========================
+// Success Page
+// =========================
 function SuccessPage({ setCart }) {
   const location = useLocation();
   const [loading, setLoading] = React.useState(true);
@@ -530,19 +613,18 @@ function SuccessPage({ setCart }) {
   const [order, setOrder] = React.useState(null);
   const navigate = useNavigate();
 
-  // Récupérer le session_id depuis l'URL
   React.useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const session_id = params.get('session_id');
+    const session_id = params.get("session_id");
     if (!session_id) {
       setError("Session de paiement introuvable.");
       setLoading(false);
       return;
     }
-    // Vérifier le paiement côté serveur
+
     fetch(`/api/confirm-payment?session_id=${session_id}`)
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         if (data.paid) {
           setOrder(data);
           setCart([]);
@@ -559,15 +641,20 @@ function SuccessPage({ setCart }) {
   }, [location, setCart]);
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
-  if (error) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white p-8 rounded-2xl shadow max-w-md w-full text-center">
-        <h1 className="text-2xl font-extrabold mb-2 text-red-600">❌ Erreur</h1>
-        <p className="text-gray-600 mb-6">{error}</p>
-        <button onClick={() => navigate("/")} className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg">Retour à la boutique</button>
+
+  if (error)
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="bg-white p-8 rounded-2xl shadow max-w-md w-full text-center">
+          <h1 className="text-2xl font-extrabold mb-2 text-red-600">❌ Erreur</h1>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button onClick={() => navigate("/")} className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg">
+            Retour à la boutique
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="bg-white p-8 rounded-2xl shadow max-w-md w-full text-center">
@@ -575,18 +662,28 @@ function SuccessPage({ setCart }) {
         <p className="text-gray-600 mb-2">Merci ! Nous préparons votre commande.</p>
         {order && (
           <div className="mb-4 text-sm text-gray-700">
-            <div>Montant : <b>{(order.amount_total / 100).toFixed(2)} €</b></div>
-            <div>Email : <b>{order.customer_email}</b></div>
-            <div>Commande : <b>{order.order_id}</b></div>
+            <div>
+              Montant : <b>{(order.amount_total / 100).toFixed(2)} €</b>
+            </div>
+            <div>
+              Email : <b>{order.customer_email}</b>
+            </div>
+            <div>
+              Commande : <b>{order.order_id}</b>
+            </div>
           </div>
         )}
-        <button onClick={() => navigate("/")} className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg">Retour à la boutique</button>
+        <button onClick={() => navigate("/")} className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg">
+          Retour à la boutique
+        </button>
       </div>
     </div>
   );
 }
 
-// Page d'annulation de paiement
+// =========================
+// Cancel Page
+// =========================
 function CancelPage() {
   const navigate = useNavigate();
   return (
@@ -594,26 +691,34 @@ function CancelPage() {
       <div className="bg-white p-8 rounded-2xl shadow max-w-md w-full text-center">
         <h1 className="text-2xl font-extrabold mb-2">❌ Paiement annulé</h1>
         <p className="text-gray-600 mb-6">Aucun paiement n’a été effectué.</p>
-        <button onClick={() => navigate("/")} className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg">Retour à la boutique</button>
+        <button onClick={() => navigate("/")} className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg">
+          Retour à la boutique
+        </button>
       </div>
     </div>
   );
 }
 
-// Nouveau composant App qui gère le routing
+// =========================
+// App (Router + State)
+// =========================
 export default function App() {
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [notification, setNotification] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   // --- STATE IA ---
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([
-    { role: 'model', text: "Salut ! Je suis Nova ✨. Je peux vous aider à trouver le cadeau parfait ou répondre à vos questions sur la livraison." }
+    {
+      role: "model",
+      text: "Salut ! Je suis Nova ✨. Je peux vous aider à trouver le cadeau parfait ou répondre à vos questions sur la livraison.",
+    },
   ]);
   const [chatInput, setChatInput] = useState("");
   const [isChatLoading, setIsChatLoading] = useState(false);
-  const [pitchLoading, setPitchLoading] = useState(null); // ID du produit en cours de pitch
+
   const chatEndRef = useRef(null);
 
   // Panier persistant (localStorage)
@@ -627,6 +732,7 @@ export default function App() {
       }
     }
   }, []);
+
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
@@ -636,14 +742,16 @@ export default function App() {
 
   // Fonctions panier
   const addToCart = (product) => {
-    setCart([...cart, product]);
+    setCart((prev) => [...prev, product]);
     setNotification(`${product.name} ajouté au panier !`);
     setIsCartOpen(true);
     setTimeout(() => setNotification(null), 3000);
   };
+
   const removeFromCart = (indexToRemove) => {
-    setCart(cart.filter((_, index) => index !== indexToRemove));
+    setCart((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
+
   const total = cart.reduce((acc, item) => acc + item.price, 0);
 
   // Paiement Stripe
@@ -655,11 +763,13 @@ export default function App() {
         body: JSON.stringify({ cart }),
       });
       const data = await response.json();
+
       if (!response.ok) {
         console.error("Stripe API error:", data);
         alert(data?.error || "Erreur lors du paiement");
         return;
       }
+
       if (data.url) window.location.href = data.url;
       else alert("Erreur Stripe: pas d'URL");
     } catch (e) {
@@ -682,7 +792,7 @@ export default function App() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            systemInstruction: { parts: [{ text: systemPrompt }] }
+            systemInstruction: { parts: [{ text: systemPrompt }] },
           }),
         }
       );
@@ -694,43 +804,52 @@ export default function App() {
       return "Une erreur est survenue avec l'IA.";
     }
   };
+
   const generatePitch = async (product) => {
-    setPitchLoading(product.id);
-    const systemPrompt = "Tu es un expert en copywriting e-commerce. Tu dois créer une phrase d'accroche (punchline) irrésistible.";
+    const systemPrompt =
+      "Tu es un expert en copywriting e-commerce. Tu dois créer une phrase d'accroche (punchline) irrésistible.";
     const prompt = `Génère une phrase d'accroche courte (max 20 mots) très persuasive pour vendre ce produit : ${product.name} à ${product.price}€. Utilise un ton urgent et exclusif. Ajoute un emoji.`;
+
     const pitch = await callGeminiAPI(prompt, systemPrompt);
-    if (pitch) {
-      alert(`📢 L'avis de Nova :\n\n${pitch}`);
-    }
-    setPitchLoading(null);
+    if (pitch) alert(`📢 L'avis de Nova :\n\n${pitch}`);
   };
 
   // Auto-scroll chat
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (chatOpen) chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, chatOpen]);
 
   return (
     <Router>
       <Routes>
-        <Route path="/" element={
-          <AppHome
-            cart={cart} setCart={setCart} isCartOpen={isCartOpen} setIsCartOpen={setIsCartOpen}
-            notification={notification} setNotification={setNotification}
-            mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen}
-            chatOpen={chatOpen} setChatOpen={setChatOpen} chatMessages={chatMessages} setChatMessages={setChatMessages}
-            chatInput={chatInput} setChatInput={setChatInput} isChatLoading={isChatLoading} setIsChatLoading={setIsChatLoading}
-            pitchLoading={pitchLoading} setPitchLoading={setPitchLoading} chatEndRef={chatEndRef}
-            handleCheckout={handleCheckout}
-            PRODUCTS={PRODUCTS}
-            addToCart={addToCart}
-            removeFromCart={removeFromCart}
-            total={total}
-            generatePitch={generatePitch}
-            callGeminiAPI={callGeminiAPI}
-            apiKey={apiKey}
-          />
-        } />
+        <Route
+          path="/"
+          element={
+            <AppHome
+              cart={cart}
+              isCartOpen={isCartOpen}
+              setIsCartOpen={setIsCartOpen}
+              notification={notification}
+              mobileMenuOpen={mobileMenuOpen}
+              setMobileMenuOpen={setMobileMenuOpen}
+              chatOpen={chatOpen}
+              setChatOpen={setChatOpen}
+              chatMessages={chatMessages}
+              setChatMessages={setChatMessages}
+              chatInput={chatInput}
+              setChatInput={setChatInput}
+              isChatLoading={isChatLoading}
+              setIsChatLoading={setIsChatLoading}
+              chatEndRef={chatEndRef}
+              handleCheckout={handleCheckout}
+              addToCart={addToCart}
+              removeFromCart={removeFromCart}
+              total={total}
+              generatePitch={generatePitch}
+              callGeminiAPI={callGeminiAPI}
+            />
+          }
+        />
         <Route path="/success" element={<SuccessPage setCart={setCart} />} />
         <Route path="/cancel" element={<CancelPage />} />
       </Routes>
