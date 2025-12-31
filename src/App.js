@@ -76,19 +76,19 @@ function AppHome({
   pitchLoading, setPitchLoading, chatEndRef,
   handleCheckout, PRODUCTS, addToCart, removeFromCart, total, generatePitch, callGeminiAPI, apiKey
 }) {
-  // Fonction pour ajouter au panier
-  const addToCart = (product) => {
-    setCart([...cart, product]);
-    setNotification(`${product.name} ajouté au panier !`);
-    setIsCartOpen(true);
-    setTimeout(() => setNotification(null), 3000);
-  };
+  // // Fonction pour ajouter au panier
+  // const addToCart = (product) => {
+  //   setCart([...cart, product]);
+  //   setNotification(`${product.name} ajouté au panier !`);
+  //   setIsCartOpen(true);
+  //   setTimeout(() => setNotification(null), 3000);
+  // };
 
-  const removeFromCart = (indexToRemove) => {
-    setCart(cart.filter((_, index) => index !== indexToRemove));
-  };
+  // const removeFromCart = (indexToRemove) => {
+  //   setCart(cart.filter((_, index) => index !== indexToRemove));
+  // };
 
-  const total = cart.reduce((acc, item) => acc + item.price, 0);
+  // const total = cart.reduce((acc, item) => acc + item.price, 0);
 
   const callGeminiAPI = async (prompt, systemPrompt) => {
     if (!apiKey) {
