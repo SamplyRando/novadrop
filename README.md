@@ -129,6 +129,22 @@ create index if not exists idx_orders_session_id on orders(session_id);
 - Sauvegarde de la commande (si Supabase configuré)
 - Pages `/success` et `/cancel` fiables
 
+## Dépendances nécessaires
+
+Avant de déployer ou de builder le projet, assure-toi d'avoir installé toutes les dépendances nécessaires :
+
+```
+npm install react-router-dom
+```
+
+Si tu utilises Supabase pour la sauvegarde des commandes côté serveur :
+
+```
+npm install @supabase/supabase-js
+```
+
+Après installation, commit et push le `package.json` et le lockfile (`package-lock.json` ou `yarn.lock`).
+
 ---
 
 Pour toute question, ouvre une issue sur le repo !
