@@ -26,76 +26,7 @@ import {
   useNavigate,
   useLocation,
 } from "react-router-dom";
-
-// Données fictives des produits (Niche Tech/Lifestyle)
-const PRODUCTS = [
-  {
-    id: 1,
-    name: "Montre Connectée Pro V3",
-    price: 59.99,
-    oldPrice: 129.99,
-    rating: 4.8,
-    reviews: 124,
-    image:
-      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800",
-    tag: "Best Seller",
-  },
-  {
-    id: 2,
-    name: "Écouteurs Sans Fil NoiseCancel",
-    price: 39.99,
-    oldPrice: 89.99,
-    rating: 4.9,
-    reviews: 89,
-    image:
-      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=800",
-    tag: "-50%",
-  },
-  {
-    id: 3,
-    name: "Projecteur Mini Cinéma HD",
-    price: 89.99,
-    oldPrice: 199.99,
-    rating: 4.7,
-    reviews: 210,
-    image:
-      "https://images.unsplash.com/photo-1517260739337-6799d2eb9ce0?auto=format&fit=crop&q=80&w=800",
-    tag: "Viral",
-  },
-  {
-    id: 4,
-    name: "Gourde Intelligente UV",
-    price: 24.99,
-    oldPrice: 49.99,
-    rating: 4.6,
-    reviews: 56,
-    image:
-      "https://images.unsplash.com/photo-1602143407151-0111419500be?auto=format&fit=crop&q=80&w=800",
-    tag: "Nouveau",
-  },
-  {
-    id: 5,
-    name: "Support Laptop Ergonomique",
-    price: 34.99,
-    oldPrice: 69.99,
-    rating: 4.9,
-    reviews: 145,
-    image:
-      "https://images.unsplash.com/photo-1616353071855-2c045c4458ae?auto=format&fit=crop&q=80&w=800",
-    tag: null,
-  },
-  {
-    id: 6,
-    name: "Lampe de Bureau LED Tactile",
-    price: 29.99,
-    oldPrice: 59.99,
-    rating: 4.5,
-    reviews: 78,
-    image:
-      "https://images.unsplash.com/photo-1534073828943-f801091a7d58?auto=format&fit=crop&q=80&w=800",
-    tag: "Promo",
-  },
-];
+import { supabase } from "./supabaseClient";
 
 // =========================
 // Home / Shop Page
@@ -126,6 +57,8 @@ function AppHome({
   // IMPORTANT: on les reçoit en props (ne PAS redéclarer)
   generatePitch,
   callGeminiAPI,
+  PRODUCTS,
+  productsLoading,
 }) {
   const handleChatSubmit = async (e) => {
     e.preventDefault();
@@ -288,84 +221,123 @@ Sois concis (max 3 phrases).
           </a>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-10 gap-x-6 lg:gap-x-8">
-          {PRODUCTS.map((product) => (
-            <div
-              key={product.id}
-              className="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col"
-            >
-              {/* Image Container */}
-              <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-t-2xl bg-gray-200 relative h-64">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-                />
-                {product.tag && (
-                  <span className="absolute top-4 left-4 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
-                    {product.tag}
-                  </span>
-                )}
+        {productsLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-10 gap-x-6 lg:gap-x-8">
+            {[...Array(6)].map((_, i) => (
+              <div
+                key={i}
+                className="animate-pulse flex flex-col bg-white rounded-2xl shadow-sm border border-gray-100"
+              >
+                {/* Image Placeholder */}
+                <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-t-2xl bg-gray-200 h-64"></div>
 
-                {/* Bouton IA "Convaincs-moi" */}
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    generatePitch(product);
-                  }}
-                  className="absolute bottom-4 right-4 bg-white/90 backdrop-blur text-purple-700 text-xs font-bold px-3 py-2 rounded-lg shadow-lg hover:bg-purple-600 hover:text-white transition flex items-center gap-1"
-                >
-                  <Sparkles size={12} />
-                  Convaincs-moi !
-                </button>
-              </div>
-
-              {/* Content */}
-              <div className="p-5 flex-1 flex flex-col">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900 line-clamp-1">
-                      <a href="#products">
-                        <span aria-hidden="true" className="absolute inset-0" />
-                        {product.name}
-                      </a>
-                    </h3>
-                    <div className="flex items-center mt-1">
-                      <div className="flex text-yellow-400">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            size={14}
-                            fill={i < Math.floor(product.rating) ? "currentColor" : "none"}
-                          />
-                        ))}
+                {/* Content Placeholder */}
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="h-4 bg-gray-300 rounded-full w-3/4 mb-2"></div>
+                      <div className="flex items-center mt-1">
+                        <div className="flex text-yellow-400">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} size={14} fill="currentColor" />
+                          ))}
+                        </div>
+                        <span className="text-xs text-gray-400 ml-2">({124} avis)</span>
                       </div>
-                      <span className="text-xs text-gray-400 ml-2">({product.reviews} avis)</span>
                     </div>
                   </div>
-                </div>
 
-                <div className="mt-4 flex items-end justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400 line-through decoration-red-500">
-                      {product.oldPrice}€
-                    </p>
-                    <p className="text-2xl font-extrabold text-gray-900">{product.price}€</p>
+                  <div className="mt-4 flex items-end justify-between">
+                    <div>
+                      <div className="h-4 bg-gray-300 rounded-full w-1/2 mb-2"></div>
+                      <div className="h-4 bg-gray-300 rounded-full w-1/4"></div>
+                    </div>
+                    <div className="w-10 h-10 bg-blue-600 rounded-full mx-auto"></div>
                   </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-10 gap-x-6 lg:gap-x-8">
+            {PRODUCTS.map((product) => (
+              <div
+                key={product.id}
+                className="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col"
+              >
+                {/* Image Container */}
+                <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-t-2xl bg-gray-200 relative h-64">
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                  />
+                  {product.tag && (
+                    <span className="absolute top-4 left-4 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                      {product.tag}
+                    </span>
+                  )}
+
+                  {/* Bouton IA "Convaincs-moi" */}
                   <button
                     onClick={(e) => {
                       e.preventDefault();
-                      addToCart(product);
+                      generatePitch(product);
                     }}
-                    className="z-10 bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-600/20 active:scale-95 flex items-center justify-center"
+                    className="absolute bottom-4 right-4 bg-white/90 backdrop-blur text-purple-700 text-xs font-bold px-3 py-2 rounded-lg shadow-lg hover:bg-purple-600 hover:text-white transition flex items-center gap-1"
                   >
-                    <ShoppingCart size={20} />
+                    <Sparkles size={12} />
+                    Convaincs-moi !
                   </button>
                 </div>
+
+                {/* Content */}
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 line-clamp-1">
+                        <a href="#products">
+                          <span aria-hidden="true" className="absolute inset-0" />
+                          {product.name}
+                        </a>
+                      </h3>
+                      <div className="flex items-center mt-1">
+                        <div className="flex text-yellow-400">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              size={14}
+                              fill={i < Math.floor(product.rating) ? "currentColor" : "none"}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs text-gray-400 ml-2">({product.reviews} avis)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex items-end justify-between">
+                    <div>
+                      <p className="text-sm text-gray-400 line-through decoration-red-500">
+                        {product.oldPrice}€
+                      </p>
+                      <p className="text-2xl font-extrabold text-gray-900">{product.price}€</p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        addToCart(product);
+                      }}
+                      className="z-10 bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-600/20 active:scale-95 flex items-center justify-center"
+                    >
+                      <ShoppingCart size={20} />
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* --- NEWSLETTER --- */}
@@ -740,6 +712,27 @@ export default function App() {
   // Clé Gemini depuis env CRA
   const apiKey = process.env.REACT_APP_GEMINI_API_KEY || "";
 
+  const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      setProductsLoading(true);
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("active", true)
+        .order("id", { ascending: true });
+      if (error) {
+        console.error("Supabase products error:", error);
+        setProducts([]);
+      } else {
+        setProducts(data || []);
+      }
+      setProductsLoading(false);
+    };
+    loadProducts();
+  }, []);
 
   // Fonctions panier
   const addToCart = (product) => {
@@ -848,6 +841,8 @@ export default function App() {
               total={total}
               generatePitch={generatePitch}
               callGeminiAPI={callGeminiAPI}
+              PRODUCTS={products}
+              productsLoading={productsLoading}
             />
           }
         />
