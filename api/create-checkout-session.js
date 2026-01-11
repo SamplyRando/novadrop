@@ -3,10 +3,10 @@ const { createClient } = require("@supabase/supabase-js");
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// Client Supabase côté serveur (clé ANON ok ici car lecture seule)
+// Client Supabase côté serveur (service role pour accès sécurisé)
 const supabase = createClient(
-  process.env.REACT_APP_SUPABASE_URL,
-  process.env.REACT_APP_SUPABASE_ANON_KEY
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 module.exports = async (req, res) => {
@@ -15,7 +15,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { cart } = req.body;
+    const { cart } = req.body || {};
 
     if (!Array.isArray(cart) || cart.length === 0) {
       return res.status(400).json({ error: "Panier vide" });
@@ -23,18 +23,36 @@ module.exports = async (req, res) => {
 
     /**
      * cart attendu côté front :
-     * [{ id: 1, quantity: 1 }]
+     * [{ productId: 1, qty: 1 }]
      * (PAS de prix, PAS de nom)
      */
 
+    const normalizedCart = cart.map((item) => ({
+      productId: Number(item.productId),
+      qty: Number(item.qty || 1),
+    }));
+
+    const hasInvalidItems = normalizedCart.some(
+      (item) =>
+        !Number.isInteger(item.productId) ||
+        item.productId <= 0 ||
+        !Number.isInteger(item.qty) ||
+        item.qty <= 0
+    );
+
+    if (hasInvalidItems) {
+      return res.status(400).json({ error: "Panier invalide" });
+    }
+
     // 1️⃣ Récupérer les produits depuis Supabase
-    const productIds = cart.map((item) => item.id);
+    const productIds = [
+      ...new Set(normalizedCart.map((item) => item.productId)),
+    ];
 
     const { data: products, error } = await supabase
       .from("products")
-      .select("id, name, price")
-      .in("id", productIds)
-      .eq("active", true);
+      .select("id, name, stripe_price_id, active")
+      .in("id", productIds);
 
     if (error) {
       console.error("Supabase error:", error);
@@ -45,23 +63,33 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: "Produits introuvables" });
     }
 
+    const productById = new Map(products.map((p) => [p.id, p]));
+    const badRequest = (message) => {
+      const err = new Error(message);
+      err.statusCode = 400;
+      throw err;
+    };
+
     // 2️⃣ Construire les line_items Stripe depuis Supabase (SOURCE DE VÉRITÉ)
-    const line_items = cart.map((item) => {
-      const product = products.find((p) => p.id === item.id);
+    const line_items = normalizedCart.map((item) => {
+      const product = productById.get(item.productId);
+      const priceId = product?.stripe_price_id;
 
       if (!product) {
-        throw new Error(`Produit invalide : ${item.id}`);
+        badRequest(`Produit introuvable : ${item.productId}`);
+      }
+
+      if (!product.active) {
+        badRequest(`Produit inactif : ${item.productId}`);
+      }
+
+      if (typeof priceId !== "string" || !priceId.startsWith("price_")) {
+        badRequest(`Stripe price_id invalide : ${item.productId}`);
       }
 
       return {
-        price_data: {
-          currency: "eur",
-          product_data: {
-            name: product.name,
-          },
-          unit_amount: Math.round(product.price * 100),
-        },
-        quantity: item.quantity || 1,
+        price: priceId,
+        quantity: item.qty,
       };
     });
 
@@ -83,14 +111,17 @@ module.exports = async (req, res) => {
     return res.status(200).json({ url: session.url });
   } catch (err) {
     console.error("Stripe checkout error:", err);
-    return res.status(500).json({ error: "Erreur Stripe" });
+    const status = err?.statusCode || 500;
+    return res
+      .status(status)
+      .json({ error: status === 400 ? err.message : "Erreur Stripe" });
   }
 };
 // ------------- Exemple de requête POST attendue -------------
 // {
 //   "cart": [
-//     { "id": 1, "quantity": 2 },
-//     { "id": 3, "quantity": 1 }
+//     { "productId": 1, "qty": 2 },
+//     { "productId": 3, "qty": 1 }
 //   ]
 // }
 

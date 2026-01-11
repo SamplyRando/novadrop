@@ -751,10 +751,15 @@ export default function App() {
   // Paiement Stripe
   const handleCheckout = async () => {
     try {
+      const safeCart = cart.map((item) => ({
+        productId: item.id,
+        qty: 1,
+      }));
+
       const response = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cart }),
+        body: JSON.stringify({ cart: safeCart }),
       });
       const data = await response.json();
 
